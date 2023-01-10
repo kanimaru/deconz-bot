@@ -1,0 +1,10 @@
+view:
+  menu:
+  {{- range $index, $light := .lights }}
+  row_{{$index}}:
+    light_{{$light.name}}:
+      label: {{$light.name}}
+      click: "Select.Light"
+      data: {{$light.data}}
+  {{- end }}
+
