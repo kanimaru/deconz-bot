@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/kanimaru/godeconz"
 	"github.com/kanimaru/godeconz/http"
-	"telegram-deconz"
 	"testing"
 )
 
@@ -22,24 +21,24 @@ func TestDeconzDeviceService_SetLightState(t *testing.T) {
 			name: "Turn off on bri 0",
 			args: args{
 				state: LightState{
-					Brightness: main.toPtr(uint8(0)),
+					Brightness: toPtr(uint8(0)),
 				},
 			},
 			expected: http.LightRequestState{
-				Bri: main.toPtr(uint8(0)),
-				On:  main.toPtr(false),
+				Bri: toPtr(uint8(0)),
+				On:  toPtr(false),
 			},
 		},
 		{
 			name: "Turn On on bri < 0",
 			args: args{
 				state: LightState{
-					Brightness: main.toPtr(uint8(50)),
+					Brightness: toPtr(uint8(50)),
 				},
 			},
 			expected: http.LightRequestState{
-				Bri: main.toPtr(uint8(50)),
-				On:  main.toPtr(true),
+				Bri: toPtr(uint8(50)),
+				On:  toPtr(true),
 			},
 		},
 		{
@@ -50,9 +49,9 @@ func TestDeconzDeviceService_SetLightState(t *testing.T) {
 				},
 			},
 			expected: http.LightRequestState{
-				Hue: main.toPtr(uint16(0)),
-				Sat: main.toPtr(uint8(255)),
-				Bri: main.toPtr(uint8(255)),
+				Hue: toPtr(uint16(0)),
+				Sat: toPtr(uint8(255)),
+				Bri: toPtr(uint8(255)),
 			},
 		},
 		{
@@ -63,9 +62,9 @@ func TestDeconzDeviceService_SetLightState(t *testing.T) {
 				},
 			},
 			expected: http.LightRequestState{
-				Hue: main.toPtr(uint16(43690)),
-				Sat: main.toPtr(uint8(255)),
-				Bri: main.toPtr(uint8(170)),
+				Hue: toPtr(uint16(43690)),
+				Sat: toPtr(uint8(255)),
+				Bri: toPtr(uint8(170)),
 			},
 		},
 	}
@@ -118,4 +117,8 @@ func (m *MockAdapter) Put(path string, data interface{}, container interface{}) 
 func (m *MockAdapter) Delete(path string, container interface{}) (any, error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func toPtr[T any](val T) *T {
+	return &val
 }

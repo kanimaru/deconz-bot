@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<preset xmlns="https://kani.dev/telegram-deconz-view">
+    <button name="close" label="Close" onClick="Action.Close" />
+    <button name="back" label="Back" onClick="Action.Back" />
+    <button name="on" label="On" onClick="Action.On" />
+    <button name="off" label="Off" onClick="Action.Off" />
+    <button name="temperature" label="Temperature">
+        <view name="Temperature Select">
+            <row use="menu" />
+            <row>
+                <button label="Warm" data="100" onClick="Action.SetTemperature" />
+                <button label="Normal" data="50" onClick="Action.SetTemperature" />
+                <button label="Cold" data="0" onClick="Action.SetTemperature" />
+            </row>
+        </view>
+    </button>
+    <button name="color" label="color" onClick="Action.Color" />
+    <button name="brightness" label="Brightness">
+        <view name="Brightness Select">
+            <row use="menu" />
+            <row>
+                <button label="20%" data="20" onClick="Action.SetBrightness" />
+                <button label="40%" data="40" onClick="Action.SetBrightness"/>
+                <button label="60%" data="60" onClick="Action.SetBrightness"/>
+                <button label="80%" data="80" onClick="Action.SetBrightness"/>
+                <button label="100%" data="100" onClick="Action.SetBrightness"/>
+            </row>
+        </view>
+    </button>
+    <row name="menu">
+        <button use="close" />
+        <button use="back" />
+    </row>
+</preset>

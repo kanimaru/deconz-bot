@@ -21,7 +21,7 @@
 !Dockerfile
 !deployment/*
 !*.png
-!*.xml
+!view/*.xml
 !*.xsd
 # !Makefile
 

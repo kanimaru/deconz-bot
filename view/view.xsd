@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://kani.dev/telegram-deconz-view"
+           xmlns="https://kani.dev/telegram-deconz-view">
+    <xs:attributeGroup name="element">
+        <xs:attribute type="xs:string" name="use"/>
+        <xs:attribute type="xs:string" name="data"/>
+        <xs:attribute type="xs:string" name="name"/>
+    </xs:attributeGroup>
+
+    <xs:element name="button">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="view" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attributeGroup ref="element" />
+            <xs:attribute type="xs:string" name="label"/>
+            <xs:attribute type="xs:string" name="onClick"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="row">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="button" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attributeGroup ref="element" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="view">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="row" maxOccurs="unbounded" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attributeGroup ref="element" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="preset">
+        <xs:complexType>
+            <xs:choice maxOccurs="unbounded" minOccurs="0">
+            <xs:element ref="row" maxOccurs="unbounded" minOccurs="0"/>
+                <xs:element ref="button" maxOccurs="unbounded" minOccurs="0"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
