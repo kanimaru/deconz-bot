@@ -3,10 +3,15 @@ package bot
 import "container/list"
 
 type BaseMessage interface {
+	// GetId of the message
 	GetId() int
+	// GetChatId in which the message was sent
 	GetChatId() int64
+	// GetText of the message
 	GetText() string
+	// GetData of a message for example the ID of the button that got pressed in this message
 	GetData() string
+	// GetCommand without / or @bot name
 	GetCommand() string
 }
 

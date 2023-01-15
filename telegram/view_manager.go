@@ -13,15 +13,17 @@ import (
 )
 
 type ViewManager struct {
-	bot               *tgbotapi.BotAPI
+	bot               Bot
+	engine            template.Engine
 	previousViewStack *list.List
 	currentView       *template.View
 	DebugView         bool
 }
 
-func CreateViewManager(bot *tgbotapi.BotAPI) bot.ViewManager[Message] {
+func CreateViewManager(bot Bot, engine template.Engine) bot.ViewManager[Message] {
 	return &ViewManager{
 		bot:               bot,
+		engine:            engine,
 		previousViewStack: list.New(),
 		DebugView:         true,
 	}
@@ -80,6 +82,21 @@ func (v *ViewManager) FindButton(id string) *template.Button {
 		return nil
 	}
 	return v.currentView.FindButton(id)
+}
+
+func (v *ViewManager) Show(name string, data interface{}, message Message) (*template.View, *Message) {
+	view, err := v.engine.Apply(name, data)
+	if err != nil {
+		_ = v.Close(message)
+		log.Errorf("Problems with parsing template - %v: %w", name, err)
+		return nil, nil
+	}
+	msg, err := v.Open(view, message)
+	if err != nil {
+		_ = v.Close(message)
+		log.Errorf("Problems with displaying %v: %w", name, err)
+	}
+	return view, &msg
 }
 
 func GetInlineKeyboard(view *template.View) tgbotapi.InlineKeyboardMarkup {

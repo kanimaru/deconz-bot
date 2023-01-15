@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/kanimaru/godeconz"
 	"math/rand"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"telegram-deconz/storage"
 	"telegram-deconz/telegram"
 	"telegram-deconz/template"
-	"telegram-deconz/view"
 )
 
 func getEnv(key string, fallback string) string {
@@ -53,15 +51,16 @@ func main() {
 		deviceService = deconz.CreateDeconzDeviceService(deconzClient)
 
 		apiKey                     = getEnv("TELEGRAM_API_KEY", "")
-		api                        = telegram.CreateBot(apiKey)
+		tgBot                      = telegram.CreateBot(apiKey)
 		storageManager             = storage.CreateInMemoryStorage()
-		actionManager              = telegram.CreateActionManager(storageManager, api.BotAPI)
+		commands                   = telegram.CreateCommand(tgBot, deviceService, storageManager, engine)
+		actionManager              = telegram.CreateActionManager(storageManager)
 		commandManager             = bot.CreateCommandManager[telegram.Message]()
 		distributor                = bot.CreateMessageDistributor[telegram.Message]()
 		viewOnClickHandler         = bot.CreateViewOnClickHandler[telegram.Message]()
-		groupsOnClickHandler       = bot.CreateGroupsOnClickHandler[telegram.Message](deviceService, engine)
-		lightsOnClickHandler       = bot.CreateLightsOnClickHandler[telegram.Message](deviceService, engine)
-		lightsActionOnClickHandler = bot.CreateLightActionOnClickHandler[telegram.Message](deviceService, engine)
+		groupsOnClickHandler       = deconz.CreateGroupsOnClickHandler[telegram.Message](deviceService)
+		lightsOnClickHandler       = deconz.CreateLightsOnClickHandler[telegram.Message](deviceService)
+		lightsActionOnClickHandler = deconz.CreateLightActionOnClickHandler[telegram.Message](deviceService)
 	)
 
 	distributor.AddMessageReceiver(actionManager)
@@ -71,38 +70,10 @@ func main() {
 	actionManager.RegisterAction(groupsOnClickHandler, "Select.Group")
 	actionManager.RegisterAction(lightsOnClickHandler, "Select.Light")
 	actionManager.RegisterAction(lightsActionOnClickHandler, lightsActionOnClickHandler.HandledActions...)
+	commandManager.AddCommand("light", commands.CreateLightCmd())
 
-	commandManager.AddCommand("light", bot.CommandDefinition[telegram.Message]{
-		Description: "Let control lights and switches",
-		Exec: func(message telegram.Message) {
-			_, err := api.BotAPI.Request(tgbotapi.NewDeleteMessage(message.GetChatId(), message.GetId()))
-			if err != nil {
-				log.Warningf("Can't delete the request")
-			}
+	tgBot.UpdateCommands(commandManager)
 
-			groupsMap := deviceService.GetGroups()
-			groupsData := view.GroupsData{
-				Groups: groupsMap,
-			}
-
-			groupView, err := engine.Apply("groups.go.xml", groupsData)
-			if err != nil {
-				panic(err)
-			}
-
-			viewManager := telegram.CreateViewManager(api.BotAPI)
-
-			msg, err := viewManager.Open(groupView, message)
-			log.Infof("Msg ID: %v", msg.GetId())
-			s := storageManager.Get(msg.GetId())
-			s.Save("viewManager", viewManager)
-			if err != nil {
-				log.Fatalf("Problem with changing keyboard: %w", err)
-			}
-		},
-	})
-	api.UpdateCommands(commandManager)
-
-	go api.HandleUpdates(distributor.ReceiveMessage)
+	go tgBot.HandleUpdates(distributor.ReceiveMessage)
 	<-doneChan
 }

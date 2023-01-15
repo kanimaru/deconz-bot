@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"telegram-deconz/bot"
 	"telegram-deconz/storage"
 )
@@ -10,14 +9,12 @@ import (
 type ActionManager struct {
 	*bot.ActionManager[Message]
 	storageManager storage.Manager
-	bot            *tgbotapi.BotAPI
 }
 
-func CreateActionManager(storageManager storage.Manager, api *tgbotapi.BotAPI) *ActionManager {
+func CreateActionManager(storageManager storage.Manager) *ActionManager {
 	return &ActionManager{
 		ActionManager:  bot.CreateBaseActionManager[Message](storageManager),
 		storageManager: storageManager,
-		bot:            api,
 	}
 }
 

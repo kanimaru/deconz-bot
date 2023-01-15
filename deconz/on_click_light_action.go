@@ -1,10 +1,10 @@
-package bot
+package deconz
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
 	"strconv"
 	"strings"
-	"telegram-deconz/deconz"
+	"telegram-deconz/bot"
 	"telegram-deconz/storage"
 	"telegram-deconz/template"
 )
@@ -15,18 +15,16 @@ const ActionColor = "Action.Color"
 const ActionSetTemperature = "Action.SetTemperature"
 const ActionSetBrightness = "Action.SetBrightness"
 
-type LightActionOnClickHandler[Message BaseMessage] struct {
-	deconzService deconz.DeviceService
-	engine        template.Engine
+type LightActionOnClickHandler[Message bot.BaseMessage] struct {
+	deconzService DeviceService
 
 	selectedLights []string
 	HandledActions []string
 }
 
-func CreateLightActionOnClickHandler[Message BaseMessage](deconzService deconz.DeviceService, engine template.Engine) *LightActionOnClickHandler[Message] {
+func CreateLightActionOnClickHandler[Message bot.BaseMessage](deconzService DeviceService) *LightActionOnClickHandler[Message] {
 	return &LightActionOnClickHandler[Message]{
 		deconzService: deconzService,
-		engine:        engine,
 		HandledActions: []string{
 			ActionOn,
 			ActionOff,
@@ -38,7 +36,7 @@ func CreateLightActionOnClickHandler[Message BaseMessage](deconzService deconz.D
 }
 
 func (l *LightActionOnClickHandler[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
-	views := storage.Get("viewManager").(ViewManager[Message])
+	views := storage.Get("viewManager").(bot.ViewManager[Message])
 	lights := l.GetLights(target)
 	l.selectedLights = lights
 	if lights == nil {
@@ -76,12 +74,12 @@ func (l *LightActionOnClickHandler[Message]) ReceiveMessage(message Message) {
 		return
 	}
 
-	l.deconzService.SetLightState(deconz.LightState{
+	l.deconzService.SetLightState(LightState{
 		Color: txt,
 	}, l.selectedLights...)
 }
 
-func (l *LightActionOnClickHandler[Message]) back(views ViewManager[Message], message Message) {
+func (l *LightActionOnClickHandler[Message]) back(views bot.ViewManager[Message], message Message) {
 	_, err := views.Back(message)
 	if err != nil {
 		_ = views.Close(message)
@@ -90,7 +88,7 @@ func (l *LightActionOnClickHandler[Message]) back(views ViewManager[Message], me
 }
 
 func (l *LightActionOnClickHandler[Message]) turnLight(lights []string, on bool) {
-	l.deconzService.SetLightState(deconz.LightState{
+	l.deconzService.SetLightState(LightState{
 		On: &on,
 	}, lights...)
 }
@@ -124,7 +122,7 @@ func (l *LightActionOnClickHandler[Message]) setTemperature(target *template.But
 	light := l.deconzService.GetLight(lightId)
 	colorTemp := int(float32(*light.Ctmin) + (float32(temperature)/100)*float32(*light.Ctmax-*light.Ctmin))
 
-	l.deconzService.SetLightState(deconz.LightState{
+	l.deconzService.SetLightState(LightState{
 		Temperature: &colorTemp,
 	}, l.selectedLights...)
 }
@@ -135,7 +133,7 @@ func (l *LightActionOnClickHandler[Message]) setBrightness(target *template.Butt
 		return
 	}
 	brightnessPtr := uint8(brightness)
-	l.deconzService.SetLightState(deconz.LightState{
+	l.deconzService.SetLightState(LightState{
 		Brightness: &brightnessPtr,
 	}, l.selectedLights...)
 }

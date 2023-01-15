@@ -12,4 +12,6 @@ type ViewManager[Message BaseMessage] interface {
 	Close(message Message) error
 	// FindButton locates a button in the current view
 	FindButton(id string) *template.Button
+	// Show a template with given data
+	Show(name string, data interface{}, message Message) (*template.View, *Message)
 }

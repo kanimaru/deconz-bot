@@ -1,29 +1,26 @@
-package bot
+package deconz
 
 import (
-	"github.com/PerformLine/go-stockutil/log"
 	"github.com/kanimaru/godeconz/http"
-	"telegram-deconz/deconz"
+	"telegram-deconz/bot"
 	"telegram-deconz/storage"
 	"telegram-deconz/template"
 	"telegram-deconz/view"
 )
 
-type GroupsOnClickHandler[Message BaseMessage] struct {
-	deconzService deconz.DeviceService
-	engine        template.Engine
+type GroupsOnClickHandler[Message bot.BaseMessage] struct {
+	deconzService DeviceService
 }
 
-func CreateGroupsOnClickHandler[Message BaseMessage](deconzService deconz.DeviceService, engine template.Engine) *GroupsOnClickHandler[Message] {
+func CreateGroupsOnClickHandler[Message bot.BaseMessage](deconzService DeviceService) *GroupsOnClickHandler[Message] {
 	return &GroupsOnClickHandler[Message]{
 		deconzService: deconzService,
-		engine:        engine,
 	}
 }
 
 func (g *GroupsOnClickHandler[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
 	storage.Save("group", target.Data)
-	views := storage.Get("viewManager").(ViewManager[Message])
+	views := storage.Get("viewManager").(bot.ViewManager[Message])
 
 	lightMap := g.deconzService.GetLightsForGroup(target.Data)
 	lights := make([]http.LightResponseState, 0, len(lightMap))
@@ -32,7 +29,7 @@ func (g *GroupsOnClickHandler[Message]) CallAction(storage storage.Storage, mess
 		lights = append(lights, light)
 	}
 
-	features := deconz.GetLightFeatures(lights...)
+	features := GetLightFeatures(lights...)
 
 	lightData := view.LightsData{
 		GroupName:            target.Label,
@@ -44,14 +41,5 @@ func (g *GroupsOnClickHandler[Message]) CallAction(storage storage.Storage, mess
 		TemperatureAvailable: features.HasTemp,
 	}
 
-	lightView, err := g.engine.Apply("lights.go.xml", lightData)
-	if err != nil {
-		_ = views.Close(message)
-		log.Errorf("Problems with parsing template for lights - %v: %w", target.Label, err)
-	}
-	_, err = views.Open(lightView, message)
-	if err != nil {
-		_ = views.Close(message)
-		log.Errorf("Problems with displaying lights for %v: %w", target.Label, err)
-	}
+	views.Show("lights.go.xml", lightData, message)
 }

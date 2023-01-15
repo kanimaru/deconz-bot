@@ -10,12 +10,12 @@ type Bot struct {
 	*tgbotapi.BotAPI
 }
 
-func CreateBot(apiKey string) *Bot {
+func CreateBot(apiKey string) Bot {
 	api, err := tgbotapi.NewBotAPI(apiKey)
 	if err != nil {
 		log.Fatalf("Can't create telegram bot: %w", err)
 	}
-	return &Bot{
+	return Bot{
 		BotAPI: api,
 	}
 }
