@@ -13,7 +13,7 @@ func CreateViewAction[Message BaseMessage]() *ViewAction[Message] {
 	return &ViewAction[Message]{}
 }
 
-func (v *ViewAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (v *ViewAction[Message]) Call(storage storage.Storage, message Message, target *template.Button) {
 	views := storage.Get("viewManager").(ViewManager[Message])
 
 	switch *target.OnClick {

@@ -17,7 +17,7 @@ func CreateLightsAction[Message bot.BaseMessage](deconzService Service) *LightsA
 	}
 }
 
-func (l *LightsAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (l *LightsAction[Message]) Call(storage storage.Storage, message Message, target *template.Button) {
 	storage.Save("light", target.Data)
 	groupId := storage.Get("group").(string)
 	group := l.deconzService.GetGroup(groupId)

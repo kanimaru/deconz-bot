@@ -17,7 +17,7 @@ func CreateScanAction[Message bot.BaseMessage](deconzService Service) *ScanActio
 	}
 }
 
-func (l *ScanAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (l *ScanAction[Message]) Call(storage storage.Storage, message Message, target *template.Button) {
 	views := storage.Get("viewManager").(bot.ViewManager[Message])
 	switch *target.OnClick {
 	case "Action.StartScan":

@@ -39,7 +39,7 @@ func CreateLightAction[Message bot.BaseMessage](deconzService Service) *LightAct
 	}
 }
 
-func (l *LightAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (l *LightAction[Message]) Call(storage storage.Storage, message Message, target *template.Button) {
 	views := storage.Get("viewManager").(bot.ViewManager[Message])
 	lights := l.GetLights(target)
 	l.selectedLights = lights

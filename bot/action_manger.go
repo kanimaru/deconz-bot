@@ -6,23 +6,23 @@ import (
 	"telegram-deconz/template"
 )
 
-type OnClickHandler[Message BaseMessage] interface {
-	CallAction(storage storage.Storage, message Message, target *template.Button)
+type Action[Message BaseMessage] interface {
+	Call(storage storage.Storage, message Message, target *template.Button)
 }
 
 type ActionManager[Message BaseMessage] struct {
-	actions        map[string]OnClickHandler[Message]
+	actions        map[string]Action[Message]
 	storageManager storage.Manager
 }
 
 func CreateBaseActionManager[Message BaseMessage](storageManager storage.Manager) *ActionManager[Message] {
 	return &ActionManager[Message]{
-		actions:        make(map[string]OnClickHandler[Message]),
+		actions:        make(map[string]Action[Message]),
 		storageManager: storageManager,
 	}
 }
 
-func (t *ActionManager[Message]) RegisterAction(handler OnClickHandler[Message], actions ...string) {
+func (t *ActionManager[Message]) RegisterAction(handler Action[Message], actions ...string) {
 	for _, action := range actions {
 		_, ok := t.actions[action]
 		if ok {
@@ -32,7 +32,7 @@ func (t *ActionManager[Message]) RegisterAction(handler OnClickHandler[Message],
 	}
 }
 
-func (t *ActionManager[Message]) UnregisterAction(action string) OnClickHandler[Message] {
+func (t *ActionManager[Message]) UnregisterAction(action string) Action[Message] {
 	handler, ok := t.actions[action]
 	if ok {
 		delete(t.actions, action)
@@ -41,7 +41,7 @@ func (t *ActionManager[Message]) UnregisterAction(action string) OnClickHandler[
 	return nil
 }
 
-func (t *ActionManager[Message]) GetAction(data string) (OnClickHandler[Message], bool) {
+func (t *ActionManager[Message]) GetAction(data string) (Action[Message], bool) {
 	handler, ok := t.actions[data]
 	return handler, ok
 }
@@ -51,7 +51,7 @@ func (t *ActionManager[Message]) HandleAction(message Message, button *template.
 	if button.OnClick != nil {
 		action, exists := t.GetAction(*button.OnClick)
 		if exists {
-			action.CallAction(s, message, button)
+			action.Call(s, message, button)
 		} else {
 			log.Warningf("Action '%v' doesn't exists", *button.OnClick)
 		}

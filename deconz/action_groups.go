@@ -18,7 +18,7 @@ func CreateGroupsAction[Message bot.BaseMessage](deconzService Service) *GroupsA
 	}
 }
 
-func (g *GroupsAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (g *GroupsAction[Message]) Call(storage storage.Storage, message Message, target *template.Button) {
 	storage.Save("group", target.Data)
 	views := storage.Get("viewManager").(bot.ViewManager[Message])
 
