@@ -50,8 +50,17 @@ func (v *ViewManager) changeKeyboard(view *template.View, message Message) (Mess
 		if strings.TrimSpace(view.Text) == "" {
 			view.Text = view.Name
 		}
-		msg := tgbotapi.NewEditMessageTextAndMarkup(message.GetChatId(), message.GetId(), view.Text, GetInlineKeyboard(view))
+		keyboard := GetInlineKeyboard(view)
+		var msg tgbotapi.Chattable
+		if len(keyboard.InlineKeyboard) == 0 {
+			msg = tgbotapi.NewEditMessageText(message.GetChatId(), message.GetId(), view.Text)
+		} else {
+			msg = tgbotapi.NewEditMessageTextAndMarkup(message.GetChatId(), message.GetId(), view.Text, keyboard)
+		}
 		m, err := v.bot.Send(msg)
+		if err != nil {
+			log.Warningf("Problem with changing keyboard: %w", err)
+		}
 		return createMessageByMessage(&m), err
 	}
 	return Message{}, errors.New("message can't be handled")

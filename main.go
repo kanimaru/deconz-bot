@@ -2,10 +2,12 @@ package main
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/kanimaru/godeconz"
 	"math/rand"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"telegram-deconz/bot"
 	"telegram-deconz/deconz"
@@ -56,11 +58,12 @@ func main() {
 		commands                   = telegram.CreateCommand(tgBot, deconzService, storageManager, engine)
 		actionManager              = telegram.CreateActionManager(storageManager)
 		commandManager             = bot.CreateCommandManager[telegram.Message]()
-		distributor                = bot.CreateMessageDistributor[telegram.Message]()
+		distributor                = bot.CreateMessageDistributor[telegram.Message](storageManager)
 		viewOnClickHandler         = bot.CreateViewOnClickHandler[telegram.Message]()
 		groupsOnClickHandler       = deconz.CreateGroupsOnClickHandler[telegram.Message](deconzService)
 		lightsOnClickHandler       = deconz.CreateLightsOnClickHandler[telegram.Message](deconzService)
 		lightsActionOnClickHandler = deconz.CreateLightActionOnClickHandler[telegram.Message](deconzService)
+		scanAction                 = deconz.CreateScanOnClickHandler[telegram.Message](deconzService)
 	)
 
 	distributor.AddMessageReceiver(actionManager)
@@ -70,10 +73,22 @@ func main() {
 	actionManager.RegisterAction(groupsOnClickHandler, "Select.Group")
 	actionManager.RegisterAction(lightsOnClickHandler, "Select.Light")
 	actionManager.RegisterAction(lightsActionOnClickHandler, lightsActionOnClickHandler.HandledActions...)
+	actionManager.RegisterAction(scanAction, "Action.StartScan", "Action.StopScan")
 	commandManager.AddCommand("light", commands.CreateLightCmd())
+	commandManager.AddCommand("scan", commands.CreateScanCmd())
 
-	tgBot.UpdateCommands(commandManager)
+	chatId := getChatId()
+	tgBot.UpdateCommands(commandManager, tgbotapi.NewBotCommandScopeChat(chatId))
 
 	go tgBot.HandleUpdates(distributor.ReceiveMessage)
 	<-doneChan
+}
+
+func getChatId() int64 {
+	chatIdStr := getEnv("TELEGRAM_CHAT_ID", "")
+	chatId, err := strconv.ParseInt(chatIdStr, 10, 64)
+	if err != nil {
+		log.Fatalf("Can't get telegram scope.")
+	}
+	return chatId
 }

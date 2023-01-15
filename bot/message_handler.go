@@ -1,6 +1,9 @@
 package bot
 
-import "container/list"
+import (
+	"container/list"
+	"telegram-deconz/storage"
+)
 
 type BaseMessage interface {
 	// GetId of the message
@@ -17,23 +20,25 @@ type BaseMessage interface {
 
 type MessageReceiver[Message BaseMessage] interface {
 	// ReceiveMessage tries to find the clicked button and start handling it
-	ReceiveMessage(message Message)
+	ReceiveMessage(storage storage.Storage, message Message)
 }
 
 type OnDeleteMessageReceiver[Message BaseMessage] interface {
 	// OnDeleteMessage called when a message got deleted so that according memory can be cleared too.
-	OnDeleteMessage(message Message)
+	OnDeleteMessage(storage storage.Storage, message Message)
 }
 
 type MessageDistributor[Message BaseMessage] struct {
 	messageReceiver  *list.List
 	onDeleteReceiver *list.List
+	storageManager   storage.Manager
 }
 
-func CreateMessageDistributor[Message BaseMessage]() MessageDistributor[Message] {
+func CreateMessageDistributor[Message BaseMessage](storageManager storage.Manager) MessageDistributor[Message] {
 	return MessageDistributor[Message]{
 		messageReceiver:  list.New(),
 		onDeleteReceiver: list.New(),
+		storageManager:   storageManager,
 	}
 }
 
@@ -51,8 +56,9 @@ func (b *MessageDistributor[Message]) RemoveMessageReceiver(receiver MessageRece
 }
 
 func (b *MessageDistributor[Message]) ReceiveMessage(message Message) {
+	s := b.storageManager.Get(message.GetId())
 	for el := b.messageReceiver.Front(); el != nil; el = el.Next() {
-		el.Value.(MessageReceiver[Message]).ReceiveMessage(message)
+		el.Value.(MessageReceiver[Message]).ReceiveMessage(s, message)
 	}
 }
 
@@ -70,7 +76,9 @@ func (b *MessageDistributor[Message]) RemoveOnDeleteReceiver(receiver OnDeleteMe
 }
 
 func (b *MessageDistributor[Message]) OnDeleteMessage(message Message) {
+	s := b.storageManager.Get(message.GetId())
 	for el := b.onDeleteReceiver.Front(); el != nil; el = el.Next() {
-		el.Value.(OnDeleteMessageReceiver[Message]).OnDeleteMessage(message)
+		el.Value.(OnDeleteMessageReceiver[Message]).OnDeleteMessage(s, message)
 	}
+	b.storageManager.Remove(message.GetId())
 }

@@ -47,11 +47,11 @@ func (t *ActionManager[Message]) GetAction(data string) (OnClickHandler[Message]
 }
 
 func (t *ActionManager[Message]) HandleAction(message Message, button *template.Button) {
-	storage := t.storageManager.Get(message.GetId())
+	s := t.storageManager.Get(message.GetId())
 	if button.OnClick != nil {
 		action, exists := t.GetAction(*button.OnClick)
 		if exists {
-			action.CallAction(storage, message, button)
+			action.CallAction(s, message, button)
 		} else {
 			log.Warningf("Action '%v' doesn't exists", *button.OnClick)
 		}

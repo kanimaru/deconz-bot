@@ -2,6 +2,7 @@ package deconz
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
+	"github.com/PerformLine/go-stockutil/sliceutil"
 	"strconv"
 	"strings"
 	"telegram-deconz/bot"
@@ -20,6 +21,9 @@ type LightActionOnClickHandler[Message bot.BaseMessage] struct {
 
 	selectedLights []string
 	HandledActions []string
+
+	// All chatIds where color select is currently enabled
+	colorSelectEnabled []int64
 }
 
 func CreateLightActionOnClickHandler[Message bot.BaseMessage](deconzService Service) *LightActionOnClickHandler[Message] {
@@ -52,7 +56,7 @@ func (l *LightActionOnClickHandler[Message]) CallAction(storage storage.Storage,
 		l.turnLight(lights, false)
 		l.back(views, message)
 	case ActionColor:
-		l.switchToColor(message)
+		l.switchToColor(views, message)
 	case ActionSetTemperature:
 		l.setTemperature(target)
 		l.back(views, message)
@@ -63,8 +67,11 @@ func (l *LightActionOnClickHandler[Message]) CallAction(storage storage.Storage,
 
 }
 
-func (l *LightActionOnClickHandler[Message]) ReceiveMessage(message Message) {
-	// TODO determine it for different chats otherwise one from a different chat can set the color too
+func (l *LightActionOnClickHandler[Message]) ReceiveMessage(_ storage.Storage, message Message) {
+	if !sliceutil.Contains(l.colorSelectEnabled, message.GetChatId()) {
+		return
+	}
+
 	txt := message.GetText()
 	if txt == "" {
 		return
@@ -108,8 +115,13 @@ func (l *LightActionOnClickHandler[Message]) GetLights(button *template.Button) 
 	return nil
 }
 
-func (l *LightActionOnClickHandler[Message]) switchToColor(message Message) {
-
+func (l *LightActionOnClickHandler[Message]) switchToColor(views bot.ViewManager[Message], message Message) {
+	l.colorSelectEnabled = append(l.colorSelectEnabled, message.GetChatId())
+	view := template.View{Text: "Select a color in form: RRGGBB"}
+	_, err := views.Open(&view, message)
+	if err != nil {
+		log.Warningf("Can't show info for color choose")
+	}
 }
 
 func (l *LightActionOnClickHandler[Message]) setTemperature(target *template.Button) {

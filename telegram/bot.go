@@ -30,7 +30,7 @@ func (b Bot) HandleUpdates(receiver func(update Message)) {
 	}
 }
 
-func (b Bot) UpdateCommands(commandManager *bot.CommandManager[Message]) {
+func (b Bot) UpdateCommands(commandManager *bot.CommandManager[Message], scope tgbotapi.BotCommandScope) {
 	commands := commandManager.GetCommands()
 	var botCommands = make([]tgbotapi.BotCommand, 0, len(commands))
 	for command, callback := range commands {
@@ -40,12 +40,9 @@ func (b Bot) UpdateCommands(commandManager *bot.CommandManager[Message]) {
 		})
 	}
 
-	scopeChat := tgbotapi.NewBotCommandScopeAllGroupChats()
-	_, err := b.Request(tgbotapi.NewSetMyCommandsWithScope(scopeChat, botCommands...))
+	_, err := b.Request(tgbotapi.NewSetMyCommandsWithScope(scope, botCommands...))
 	if err != nil {
 		log.Errorf("Can't update telegram bot commands: %v", err)
-	} else {
-		log.Notice("Commands are up to date.")
 	}
 }
 

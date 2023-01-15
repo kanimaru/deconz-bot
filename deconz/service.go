@@ -27,6 +27,8 @@ type Service interface {
 	GetLight(light string) http.LightResponseState
 	GetGroup(group string) http.GroupResponseAttribute
 	SetLightState(state LightState, lights ...string)
+	StartScan(duration uint8)
+	StopScan()
 }
 
 type service[T any] struct {
@@ -148,4 +150,23 @@ func (d service[T]) GetLightsForGroup(group string) map[string]string {
 		lightNames[lightId] = lightState.Name
 	}
 	return lightNames
+}
+
+func (d service[T]) StartScan(duration uint8) {
+	_, err := d.client.ModifyConfiguration(http.ConfigRequest{
+		PermitJoin: &duration,
+	})
+	if err != nil {
+		log.Warningf("Can't enable scan: %w", err)
+	}
+}
+
+func (d service[T]) StopScan() {
+	duration := uint8(0)
+	_, err := d.client.ModifyConfiguration(http.ConfigRequest{
+		PermitJoin: &duration,
+	})
+	if err != nil {
+		log.Warningf("Can't disable scan: %w", err)
+	}
 }

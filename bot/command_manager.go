@@ -2,11 +2,12 @@ package bot
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
+	"telegram-deconz/storage"
 )
 
 type CommandDefinition[Message BaseMessage] struct {
 	Description string
-	Exec        func(update Message)
+	Exec        func(storage storage.Storage, update Message)
 }
 
 type CommandManager[Message BaseMessage] struct {
@@ -19,22 +20,18 @@ func CreateCommandManager[Message BaseMessage]() *CommandManager[Message] {
 	}
 }
 
-func (c *CommandManager[Message]) ReceiveMessage(message Message) {
+func (c *CommandManager[Message]) ReceiveMessage(storage storage.Storage, message Message) {
 	command := message.GetCommand()
-	if command != "" {
-		c.handleCommand(message)
+	if command == "" {
+		return
 	}
-}
 
-func (c *CommandManager[Message]) handleCommand(message Message) {
-	log.Infof("Msg ID: %v", message.GetId())
-	command := message.GetCommand()
 	commandDefinition, ok := c.commands[command]
 	if !ok {
 		log.Debugf("Command not found: %v", command)
 		return
 	}
-	commandDefinition.Exec(message)
+	commandDefinition.Exec(storage, message)
 }
 
 func (c *CommandManager[Message]) AddCommand(command string, definition CommandDefinition[Message]) {

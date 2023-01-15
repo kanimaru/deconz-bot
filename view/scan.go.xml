@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<view name="scan" xmlns="https://kani.dev/telegram-deconz-view">
+    Scan for new Devices:
+    <row>
+        <button label="Start Scan" onClick="Action.StartScan"/>
+        <button label="Stop Scan" onClick="Action.StopScan"/>
+    </row>
+</view>

@@ -18,12 +18,11 @@ func CreateActionManager(storageManager storage.Manager) *ActionManager {
 	}
 }
 
-func (t *ActionManager) ReceiveMessage(message Message) {
+func (t *ActionManager) ReceiveMessage(storage storage.Storage, message Message) {
 	data := message.GetData()
 	if message.GetData() == "" {
 		return
 	}
-	storage := t.storageManager.Get(message.GetId())
 	views := storage.Get("viewManager").(*ViewManager)
 
 	button := views.FindButton(data)
