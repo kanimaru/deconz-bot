@@ -4,16 +4,21 @@ import (
 	"encoding/xml"
 	"github.com/PerformLine/go-stockutil/log"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
-type Engine struct {
+type Engine interface {
+	// Apply Fills the given template (by name) and returns the generic structure of the view
+	Apply(name string, data interface{}) (*View, error)
+}
+
+type engine struct {
 	templates *template.Template
 
-	// Unique button mapping for back references. Every button in every view needs a unique ID for the button
-	refButtonMap map[string]*Button
 	// presets for buttons
 	buttons map[string]Button
 	// preset for rows
@@ -22,7 +27,7 @@ type Engine struct {
 	processedViews []*View
 }
 
-func CreateEngineByDir(dir string) *Engine {
+func CreateEngineByDir(dir string) Engine {
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Can't get working directory.")
@@ -48,51 +53,69 @@ func CreateEngineByDir(dir string) *Engine {
 	return CreateEngineByFiles(fileNames...)
 }
 
-func CreateEngineByFiles(files ...string) *Engine {
-	engine := Engine{
-		templates: template.New("root"),
-		buttons:   map[string]Button{},
-		rows:      map[string]Row{},
+func CreateEngineByFiles(files ...string) Engine {
+	e := &engine{
+		templates:      template.New("root"),
+		buttons:        make(map[string]Button),
+		rows:           make(map[string]Row),
+		processedViews: make([]*View, 100),
 	}
 
-	tmpl, err := engine.templates.ParseFiles(files...)
+	tmpl, err := e.templates.ParseFiles(files...)
 	if err != nil {
 		panic(err)
 	}
-	engine.templates = tmpl
-	engine.findPresets()
-	return &engine
+	e.templates = tmpl
+	e.findPresets(files)
+	return e
 }
 
 // findPresets looking through all templates for preset information and saves them for later use.
-func (e *Engine) findPresets() {
-	for _, t := range e.templates.Templates() {
-		structure, err := e.Apply(t.Name(), nil)
+func (e *engine) findPresets(paths []string) {
+	for _, path := range paths {
+		preset, err := e.parsePreset(path)
 		if err != nil {
 			continue
 		}
-		for _, row := range structure.Row {
+		for _, row := range preset.Row {
 			e.rows[row.Name] = row
 		}
-		for _, button := range structure.Button {
+		for _, button := range preset.Button {
 			e.buttons[button.Name] = button
 		}
 	}
 }
 
 // Apply Fills the given template (by name) and returns the generic structure of the view
-func (e *Engine) Apply(name string, data interface{}) (*Structure, error) {
-	structure, err := e.parseStructure(name, data)
+func (e *engine) Apply(name string, data interface{}) (*View, error) {
+	view, err := e.parseView(name, data)
 	if err != nil {
 		return nil, err
 	}
-	e.inflate(structure.View)
-	e.resolveButtonRefs(structure.View)
-	return structure, nil
+	e.inflate(view)
+	// clear processed views
+	e.processedViews = e.processedViews[:0]
+	return view, nil
 }
 
-// parseStructure uses the given template content and parses the structure from the file
-func (e *Engine) parseStructure(name string, data interface{}) (*Structure, error) {
+// parsePreset uses the given template content and parses the structure from the file
+func (e *engine) parsePreset(name string) (*Preset, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		log.Debugf("Can't open preset %w cause: %w", name, err)
+		return nil, err
+	}
+	decoder := xml.NewDecoder(file)
+	preset := Preset{}
+	err = decoder.Decode(&preset)
+	if err != nil {
+		return nil, err
+	}
+	return &preset, nil
+}
+
+// parseView uses the given template content and parses the structure from the file
+func (e *engine) parseView(name string, data interface{}) (*View, error) {
 	reader, writer := io.Pipe()
 	go func() {
 		defer writer.Close()
@@ -103,30 +126,16 @@ func (e *Engine) parseStructure(name string, data interface{}) (*Structure, erro
 	}()
 
 	decoder := xml.NewDecoder(reader)
-	structure := Structure{}
-	err := decoder.Decode(&data)
+	structure := View{}
+	err := decoder.Decode(&structure)
 	if err != nil {
 		return nil, err
 	}
 	return &structure, nil
 }
 
-// resolveButtonRefs checks all buttons and generates unique IDs for the buttons
-func (e *Engine) resolveButtonRefs(view *View) {
-	e.processedViews = append(e.processedViews, view)
-	for _, row := range view.Row {
-		for _, button := range row.Button {
-			id := button.getId()
-			e.refButtonMap[id] = &button
-			if button.View != nil && e.notProcessed(button.View) {
-				e.resolveButtonRefs(view)
-			}
-		}
-	}
-}
-
-// notProcessed checks if the view was already processed
-func (e *Engine) notProcessed(view *View) bool {
+// processed checks if the view was already processed
+func (e *engine) processed(view *View) bool {
 	for _, processedView := range e.processedViews {
 		if view == processedView {
 			return true
@@ -135,34 +144,59 @@ func (e *Engine) notProcessed(view *View) bool {
 	return false
 }
 
-func (e *Engine) findById(id string) *Button {
-	return e.refButtonMap[id]
-}
-
 // inflate is looking for the use of preset information within the structure and replaces it with the real version also
 // adds the references to the parents
-func (e *Engine) inflate(view *View) {
-	for i, row := range view.Row {
+func (e *engine) inflate(view *View) {
+	if view.Name == "" {
+		view.Name = generateName()
+	}
+	view.refButtonMap = make(map[string]*Button)
+	view.Text = strings.TrimSpace(view.Text)
+
+	for _, row := range view.Row {
 		if row.Use != "" {
 			rowPreset, ok := e.rows[row.Use]
 			if !ok {
 				continue
 			}
-			rowPreset.parent = &view.Element
-			rowPreset.copy(row)
-			view.Row[i] = rowPreset
+			row.copy(&rowPreset)
 		}
+		if row.Name == "" {
+			row.Name = generateName()
+		}
+		row.Parent = &view.Element
+		row.Text = strings.TrimSpace(row.Text)
 
-		for i, button := range row.Button {
+		for _, button := range row.Button {
 			if button.Use != "" {
-				buttonPreset, ok := e.buttons[button.Name]
+				buttonPreset, ok := e.buttons[button.Use]
 				if !ok {
 					continue
 				}
-				buttonPreset.parent = &view.Element
-				buttonPreset.copy(button)
-				row.Button[i] = buttonPreset
+				button.copy(&buttonPreset)
+			}
+			if button.Name == "" {
+				button.Name = generateName()
+			}
+			button.Parent = &row.Element
+			view.refButtonMap[button.GetId()] = button
+			button.Text = strings.TrimSpace(button.Text)
+
+			if button.View != nil && !e.processed(button.View) {
+				e.processedViews = append(e.processedViews, button.View)
+				button.View.Element.Parent = &button.Element
+				e.inflate(button.View)
 			}
 		}
 	}
+}
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func generateName() string {
+	b := make([]byte, 8)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
 }

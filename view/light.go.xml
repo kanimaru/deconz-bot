@@ -1,0 +1,22 @@
+{{- /*gotype: telegram-deconz/view.LightData*/ -}}
+<?xml version="1.0" encoding="utf-8" ?>
+<view xmlns="https://kani.dev/telegram-deconz-view">
+    {{ .GroupName}} - {{.Name }} Light:
+    <row use="menu" />
+    <row>
+        {{- if .On }}
+        <button use="off" data="light:{{ .Id }}"/>
+        {{- else }}
+        <button use="on" data="light:{{ .Id }}"/>
+        {{- end }}
+        {{- if .ColorAvailable }}
+        <button use="color" data="light:{{ .Id }}"/>
+        {{- end }}
+        {{- if .BrightnessAvailable }}
+        <button use="brightness" data="light:{{ .Id }}"/>
+        {{- end }}
+        {{- if .TemperatureAvailable }}
+        <button use="temperature" data="light:{{ .Id }}"/>
+        {{- end }}
+    </row>
+</view>

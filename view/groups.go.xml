@@ -1,0 +1,13 @@
+{{- /*gotype: telegram-deconz/view.GroupsData*/ -}}
+<?xml version="1.0" encoding="utf-8" ?>
+<view name="groups" xmlns="https://kani.dev/telegram-deconz-view">
+    Groups:
+    <row name="menu">
+        <button use="close"/>
+    </row>
+    {{- range $id, $group := .Groups }}
+    <row name="group-list">
+        <button name="group-{{$id}}" label="{{ $group }}" onClick="Select.Group" data="{{ $id }}"/>
+    </row>
+    {{- end }}
+</view>

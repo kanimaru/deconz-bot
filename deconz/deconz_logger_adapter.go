@@ -1,4 +1,4 @@
-package main
+package deconz
 
 import "github.com/PerformLine/go-stockutil/log"
 

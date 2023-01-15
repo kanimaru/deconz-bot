@@ -21,6 +21,8 @@
 !Dockerfile
 !deployment/*
 !*.png
+!*.xml
+!*.xsd
 # !Makefile
 
 # ...even if they are in subdirectories

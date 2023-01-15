@@ -1,9 +1,10 @@
-package main
+package deconz
 
 import (
 	"encoding/json"
 	"github.com/kanimaru/godeconz"
 	"github.com/kanimaru/godeconz/http"
+	"telegram-deconz"
 	"testing"
 )
 
@@ -21,50 +22,50 @@ func TestDeconzDeviceService_SetLightState(t *testing.T) {
 			name: "Turn off on bri 0",
 			args: args{
 				state: LightState{
-					brightness: toPtr(uint8(0)),
+					Brightness: main.toPtr(uint8(0)),
 				},
 			},
 			expected: http.LightRequestState{
-				Bri: toPtr(uint8(0)),
-				On:  toPtr(false),
+				Bri: main.toPtr(uint8(0)),
+				On:  main.toPtr(false),
 			},
 		},
 		{
 			name: "Turn On on bri < 0",
 			args: args{
 				state: LightState{
-					brightness: toPtr(uint8(50)),
+					Brightness: main.toPtr(uint8(50)),
 				},
 			},
 			expected: http.LightRequestState{
-				Bri: toPtr(uint8(50)),
-				On:  toPtr(true),
+				Bri: main.toPtr(uint8(50)),
+				On:  main.toPtr(true),
 			},
 		},
 		{
 			name: "Turn Red with right HSV",
 			args: args{
 				state: LightState{
-					color: "#FF0000",
+					Color: "#FF0000",
 				},
 			},
 			expected: http.LightRequestState{
-				Hue: toPtr(uint16(0)),
-				Sat: toPtr(uint8(255)),
-				Bri: toPtr(uint8(255)),
+				Hue: main.toPtr(uint16(0)),
+				Sat: main.toPtr(uint8(255)),
+				Bri: main.toPtr(uint8(255)),
 			},
 		},
 		{
 			name: "Turn Blue with right HSV",
 			args: args{
 				state: LightState{
-					color: "#0000AA",
+					Color: "#0000AA",
 				},
 			},
 			expected: http.LightRequestState{
-				Hue: toPtr(uint16(43690)),
-				Sat: toPtr(uint8(255)),
-				Bri: toPtr(uint8(170)),
+				Hue: main.toPtr(uint16(43690)),
+				Sat: main.toPtr(uint8(255)),
+				Bri: main.toPtr(uint8(170)),
 			},
 		},
 	}
@@ -72,7 +73,7 @@ func TestDeconzDeviceService_SetLightState(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient, httpClient := CreateMockClient()
 
-			d := DeconzDeviceService[any]{
+			d := deviceService[any]{
 				client: mockClient,
 			}
 			d.SetLightState(tt.args.state, "test_light")

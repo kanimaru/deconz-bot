@@ -1,4 +1,4 @@
-package main
+package deconz
 
 import (
 	"github.com/PerformLine/go-stockutil/log"
@@ -6,15 +6,18 @@ import (
 	"github.com/lucasb-eyer/go-colorful"
 )
 
+var on = true
+var off = false
+
 type LightState struct {
-	// on optional will be set with brightness can be usefully when you want to hold the brightness
-	on *bool
-	// brightness between 0-255
-	brightness *uint8
-	// color is an RGB hex string
-	color string
-	// temperature of the light between ctMin and ctMax of the light
-	temperature *int
+	// On optional will be set with brightness can be usefully when you want to hold the brightness
+	On *bool
+	// Brightness between 0-255
+	Brightness *uint8
+	// Color is an RGB hex string
+	Color string
+	// Temperature of the light between ctMin and ctMax of the light
+	Temperature *int
 }
 
 type DeviceService interface {
@@ -26,18 +29,18 @@ type DeviceService interface {
 	SetLightState(state LightState, lights ...string)
 }
 
-type DeconzDeviceService[T any] struct {
+type deviceService[T any] struct {
 	client *http.Client[T]
 }
 
-func createDeconzDeviceService[T any](client *http.Client[T]) DeviceService {
+func CreateDeconzDeviceService[T any](client *http.Client[T]) DeviceService {
 	log.Notice("Deconz device service initialized.")
-	return DeconzDeviceService[T]{
+	return deviceService[T]{
 		client: client,
 	}
 }
 
-func (d DeconzDeviceService[T]) GetGroups() map[string]string {
+func (d deviceService[T]) GetGroups() map[string]string {
 	groups := make(map[string]http.GroupResponse)
 	_, err := d.client.GetAllGroups(&groups)
 	if err != nil {
@@ -50,7 +53,7 @@ func (d DeconzDeviceService[T]) GetGroups() map[string]string {
 	return groupNames
 }
 
-func (d DeconzDeviceService[T]) GetGroup(group string) http.GroupResponseAttribute {
+func (d deviceService[T]) GetGroup(group string) http.GroupResponseAttribute {
 	var groupResponse http.GroupResponseAttribute
 	_, err := d.client.GetGroupAttributes(group, &groupResponse)
 	if err != nil {
@@ -60,7 +63,7 @@ func (d DeconzDeviceService[T]) GetGroup(group string) http.GroupResponseAttribu
 
 }
 
-func (d DeconzDeviceService[T]) GetLights() map[string]string {
+func (d deviceService[T]) GetLights() map[string]string {
 	lights := make(map[string]http.LightResponseState)
 	_, err := d.client.GetAllLights(&lights)
 	if err != nil {
@@ -73,7 +76,7 @@ func (d DeconzDeviceService[T]) GetLights() map[string]string {
 	return lightNames
 }
 
-func (d DeconzDeviceService[T]) GetLight(light string) http.LightResponseState {
+func (d deviceService[T]) GetLight(light string) http.LightResponseState {
 	var state http.LightResponseState
 	_, err := d.client.Get("/lights/%s", &state, light)
 	if err != nil {
@@ -82,24 +85,24 @@ func (d DeconzDeviceService[T]) GetLight(light string) http.LightResponseState {
 	return state
 }
 
-func (d DeconzDeviceService[T]) SetLightState(state LightState, lights ...string) {
+func (d deviceService[T]) SetLightState(state LightState, lights ...string) {
 	lightState := http.LightRequestState{
-		Ct: state.temperature,
-		On: state.on,
+		Ct: state.Temperature,
+		On: state.On,
 	}
 
-	if state.on == nil && state.brightness != nil {
-		if *state.brightness > 0 {
+	if state.On == nil && state.Brightness != nil {
+		if *state.Brightness > 0 {
 			lightState.On = &on
 		} else {
 			lightState.On = &off
 		}
 	}
 
-	if state.color != "" {
-		color, err := colorful.Hex(state.color)
+	if state.Color != "" {
+		color, err := colorful.Hex(state.Color)
 		if err != nil {
-			log.Errorf("Can't convert %v to color: %v", state.color, err)
+			log.Errorf("Can't convert %v to color: %v", state.Color, err)
 		}
 
 		h, s, v := color.Hsv()
@@ -117,7 +120,7 @@ func (d DeconzDeviceService[T]) SetLightState(state LightState, lights ...string
 		lightState.Hue = &hpt
 		lightState.Sat = &spt
 	} else {
-		lightState.Bri = state.brightness
+		lightState.Bri = state.Brightness
 	}
 
 	for _, light := range lights {
@@ -128,7 +131,7 @@ func (d DeconzDeviceService[T]) SetLightState(state LightState, lights ...string
 	}
 }
 
-func (d DeconzDeviceService[T]) GetLightsForGroup(group string) map[string]string {
+func (d deviceService[T]) GetLightsForGroup(group string) map[string]string {
 	var groupResponse http.GroupResponseAttribute
 	_, err := d.client.GetGroupAttributes(group, &groupResponse)
 	if err != nil {
