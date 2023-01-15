@@ -7,17 +7,17 @@ import (
 	"telegram-deconz/view"
 )
 
-type LightsOnClickHandler[Message bot.BaseMessage] struct {
+type LightsAction[Message bot.BaseMessage] struct {
 	deconzService Service
 }
 
-func CreateLightsOnClickHandler[Message bot.BaseMessage](deconzService Service) *LightsOnClickHandler[Message] {
-	return &LightsOnClickHandler[Message]{
+func CreateLightsAction[Message bot.BaseMessage](deconzService Service) *LightsAction[Message] {
+	return &LightsAction[Message]{
 		deconzService: deconzService,
 	}
 }
 
-func (l *LightsOnClickHandler[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (l *LightsAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
 	storage.Save("light", target.Data)
 	groupId := storage.Get("group").(string)
 	group := l.deconzService.GetGroup(groupId)

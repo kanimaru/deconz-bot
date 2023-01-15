@@ -6,14 +6,14 @@ import (
 	"telegram-deconz/template"
 )
 
-type ViewOnClickHandler[Message BaseMessage] struct {
+type ViewAction[Message BaseMessage] struct {
 }
 
-func CreateViewOnClickHandler[Message BaseMessage]() *ViewOnClickHandler[Message] {
-	return &ViewOnClickHandler[Message]{}
+func CreateViewAction[Message BaseMessage]() *ViewAction[Message] {
+	return &ViewAction[Message]{}
 }
 
-func (v *ViewOnClickHandler[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (v *ViewAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
 	views := storage.Get("viewManager").(ViewManager[Message])
 
 	switch *target.OnClick {

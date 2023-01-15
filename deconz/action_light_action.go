@@ -16,7 +16,7 @@ const ActionColor = "Action.Color"
 const ActionSetTemperature = "Action.SetTemperature"
 const ActionSetBrightness = "Action.SetBrightness"
 
-type LightActionOnClickHandler[Message bot.BaseMessage] struct {
+type LightAction[Message bot.BaseMessage] struct {
 	deconzService Service
 
 	selectedLights []string
@@ -26,8 +26,8 @@ type LightActionOnClickHandler[Message bot.BaseMessage] struct {
 	colorSelectEnabled []int64
 }
 
-func CreateLightActionOnClickHandler[Message bot.BaseMessage](deconzService Service) *LightActionOnClickHandler[Message] {
-	return &LightActionOnClickHandler[Message]{
+func CreateLightAction[Message bot.BaseMessage](deconzService Service) *LightAction[Message] {
+	return &LightAction[Message]{
 		deconzService: deconzService,
 		HandledActions: []string{
 			ActionOn,
@@ -39,7 +39,7 @@ func CreateLightActionOnClickHandler[Message bot.BaseMessage](deconzService Serv
 	}
 }
 
-func (l *LightActionOnClickHandler[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (l *LightAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
 	views := storage.Get("viewManager").(bot.ViewManager[Message])
 	lights := l.GetLights(target)
 	l.selectedLights = lights
@@ -67,7 +67,7 @@ func (l *LightActionOnClickHandler[Message]) CallAction(storage storage.Storage,
 
 }
 
-func (l *LightActionOnClickHandler[Message]) ReceiveMessage(_ storage.Storage, message Message) {
+func (l *LightAction[Message]) ReceiveMessage(_ storage.Storage, message Message) {
 	if !sliceutil.Contains(l.colorSelectEnabled, message.GetChatId()) {
 		return
 	}
@@ -86,7 +86,7 @@ func (l *LightActionOnClickHandler[Message]) ReceiveMessage(_ storage.Storage, m
 	}, l.selectedLights...)
 }
 
-func (l *LightActionOnClickHandler[Message]) back(views bot.ViewManager[Message], message Message) {
+func (l *LightAction[Message]) back(views bot.ViewManager[Message], message Message) {
 	_, err := views.Back(message)
 	if err != nil {
 		_ = views.Close(message)
@@ -94,13 +94,13 @@ func (l *LightActionOnClickHandler[Message]) back(views bot.ViewManager[Message]
 	}
 }
 
-func (l *LightActionOnClickHandler[Message]) turnLight(lights []string, on bool) {
+func (l *LightAction[Message]) turnLight(lights []string, on bool) {
 	l.deconzService.SetLightState(LightState{
 		On: &on,
 	}, lights...)
 }
 
-func (l *LightActionOnClickHandler[Message]) GetLights(button *template.Button) []string {
+func (l *LightAction[Message]) GetLights(button *template.Button) []string {
 	for cur := &button.Element; cur != nil; cur = cur.Parent {
 		data := cur.Data
 		if strings.HasPrefix(data, "group:") {
@@ -115,7 +115,7 @@ func (l *LightActionOnClickHandler[Message]) GetLights(button *template.Button) 
 	return nil
 }
 
-func (l *LightActionOnClickHandler[Message]) switchToColor(views bot.ViewManager[Message], message Message) {
+func (l *LightAction[Message]) switchToColor(views bot.ViewManager[Message], message Message) {
 	l.colorSelectEnabled = append(l.colorSelectEnabled, message.GetChatId())
 	view := template.View{Text: "Select a color in form: RRGGBB"}
 	_, err := views.Open(&view, message)
@@ -124,7 +124,7 @@ func (l *LightActionOnClickHandler[Message]) switchToColor(views bot.ViewManager
 	}
 }
 
-func (l *LightActionOnClickHandler[Message]) setTemperature(target *template.Button) {
+func (l *LightAction[Message]) setTemperature(target *template.Button) {
 	temperature, _ := strconv.ParseInt(target.Data, 10, 8)
 	if len(l.selectedLights) == 0 {
 		return
@@ -139,7 +139,7 @@ func (l *LightActionOnClickHandler[Message]) setTemperature(target *template.But
 	}, l.selectedLights...)
 }
 
-func (l *LightActionOnClickHandler[Message]) setBrightness(target *template.Button) {
+func (l *LightAction[Message]) setBrightness(target *template.Button) {
 	brightness, _ := strconv.ParseUint(target.Data, 10, 8)
 	if len(l.selectedLights) == 0 {
 		return

@@ -7,17 +7,17 @@ import (
 	"telegram-deconz/template"
 )
 
-type ScanOnClickHandler[Message bot.BaseMessage] struct {
+type ScanAction[Message bot.BaseMessage] struct {
 	deconzService Service
 }
 
-func CreateScanOnClickHandler[Message bot.BaseMessage](deconzService Service) *ScanOnClickHandler[Message] {
-	return &ScanOnClickHandler[Message]{
+func CreateScanAction[Message bot.BaseMessage](deconzService Service) *ScanAction[Message] {
+	return &ScanAction[Message]{
 		deconzService: deconzService,
 	}
 }
 
-func (l *ScanOnClickHandler[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
+func (l *ScanAction[Message]) CallAction(storage storage.Storage, message Message, target *template.Button) {
 	views := storage.Get("viewManager").(bot.ViewManager[Message])
 	switch *target.OnClick {
 	case "Action.StartScan":
