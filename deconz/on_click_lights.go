@@ -8,10 +8,10 @@ import (
 )
 
 type LightsOnClickHandler[Message bot.BaseMessage] struct {
-	deconzService DeviceService
+	deconzService Service
 }
 
-func CreateLightsOnClickHandler[Message bot.BaseMessage](deconzService DeviceService) *LightsOnClickHandler[Message] {
+func CreateLightsOnClickHandler[Message bot.BaseMessage](deconzService Service) *LightsOnClickHandler[Message] {
 	return &LightsOnClickHandler[Message]{
 		deconzService: deconzService,
 	}

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestDeconzDeviceService_SetLightState(t *testing.T) {
+func TestService_SetLightState(t *testing.T) {
 	t.Parallel()
 	type args struct {
 		state LightState
@@ -72,7 +72,7 @@ func TestDeconzDeviceService_SetLightState(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient, httpClient := CreateMockClient()
 
-			d := deviceService[any]{
+			d := service[any]{
 				client: mockClient,
 			}
 			d.SetLightState(tt.args.state, "test_light")

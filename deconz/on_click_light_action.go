@@ -16,13 +16,13 @@ const ActionSetTemperature = "Action.SetTemperature"
 const ActionSetBrightness = "Action.SetBrightness"
 
 type LightActionOnClickHandler[Message bot.BaseMessage] struct {
-	deconzService DeviceService
+	deconzService Service
 
 	selectedLights []string
 	HandledActions []string
 }
 
-func CreateLightActionOnClickHandler[Message bot.BaseMessage](deconzService DeviceService) *LightActionOnClickHandler[Message] {
+func CreateLightActionOnClickHandler[Message bot.BaseMessage](deconzService Service) *LightActionOnClickHandler[Message] {
 	return &LightActionOnClickHandler[Message]{
 		deconzService: deconzService,
 		HandledActions: []string{

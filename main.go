@@ -47,20 +47,20 @@ func main() {
 			HttpProtocol: getEnv("DECONZ_PROTO", "http"),
 			ApiKey:       getEnv("DECONZ_API_KEY", ""),
 		}
-		deconzClient  = deconz.CreateDeconzClient(setting)
-		deviceService = deconz.CreateDeconzDeviceService(deconzClient)
+		deconzClient  = deconz.CreateClient(setting)
+		deconzService = deconz.CreateService(deconzClient)
 
 		apiKey                     = getEnv("TELEGRAM_API_KEY", "")
 		tgBot                      = telegram.CreateBot(apiKey)
 		storageManager             = storage.CreateInMemoryStorage()
-		commands                   = telegram.CreateCommand(tgBot, deviceService, storageManager, engine)
+		commands                   = telegram.CreateCommand(tgBot, deconzService, storageManager, engine)
 		actionManager              = telegram.CreateActionManager(storageManager)
 		commandManager             = bot.CreateCommandManager[telegram.Message]()
 		distributor                = bot.CreateMessageDistributor[telegram.Message]()
 		viewOnClickHandler         = bot.CreateViewOnClickHandler[telegram.Message]()
-		groupsOnClickHandler       = deconz.CreateGroupsOnClickHandler[telegram.Message](deviceService)
-		lightsOnClickHandler       = deconz.CreateLightsOnClickHandler[telegram.Message](deviceService)
-		lightsActionOnClickHandler = deconz.CreateLightActionOnClickHandler[telegram.Message](deviceService)
+		groupsOnClickHandler       = deconz.CreateGroupsOnClickHandler[telegram.Message](deconzService)
+		lightsOnClickHandler       = deconz.CreateLightsOnClickHandler[telegram.Message](deconzService)
+		lightsActionOnClickHandler = deconz.CreateLightActionOnClickHandler[telegram.Message](deconzService)
 	)
 
 	distributor.AddMessageReceiver(actionManager)

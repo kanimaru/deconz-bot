@@ -7,7 +7,7 @@ import (
 	"github.com/kanimaru/godeconz/http"
 )
 
-func CreateDeconzClient(setting godeconz.Settings) *http.Client[*resty.Response] {
+func CreateClient(setting godeconz.Settings) *http.Client[*resty.Response] {
 	httpAdapter := http.CreateAdapterHttpClientResty(resty.New(), Logger{}, false)
 	deconzClient := http.CreateClient(httpAdapter, setting)
 	log.Notice("Deconz initialized.")

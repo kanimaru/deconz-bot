@@ -16,7 +16,7 @@ func (c Command) CreateLightCmd() bot.CommandDefinition[Message] {
 				log.Warningf("Can't delete the request")
 			}
 
-			groupsMap := c.deviceService.GetGroups()
+			groupsMap := c.deconzService.GetGroups()
 			groupsData := view.GroupsData{
 				Groups: groupsMap,
 			}

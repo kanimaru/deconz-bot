@@ -9,10 +9,10 @@ import (
 )
 
 type GroupsOnClickHandler[Message bot.BaseMessage] struct {
-	deconzService DeviceService
+	deconzService Service
 }
 
-func CreateGroupsOnClickHandler[Message bot.BaseMessage](deconzService DeviceService) *GroupsOnClickHandler[Message] {
+func CreateGroupsOnClickHandler[Message bot.BaseMessage](deconzService Service) *GroupsOnClickHandler[Message] {
 	return &GroupsOnClickHandler[Message]{
 		deconzService: deconzService,
 	}

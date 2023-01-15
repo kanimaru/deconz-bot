@@ -8,15 +8,15 @@ import (
 
 type Command struct {
 	bot            Bot
-	deviceService  deconz.DeviceService
+	deconzService  deconz.Service
 	storageManager storage.Manager
 	engine         template.Engine
 }
 
-func CreateCommand(bot Bot, deviceService deconz.DeviceService, storageManager storage.Manager, engine template.Engine) *Command {
+func CreateCommand(bot Bot, deconzService deconz.Service, storageManager storage.Manager, engine template.Engine) *Command {
 	return &Command{
 		bot:            bot,
-		deviceService:  deviceService,
+		deconzService:  deconzService,
 		storageManager: storageManager,
 		engine:         engine,
 	}

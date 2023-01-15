@@ -20,7 +20,7 @@ type LightState struct {
 	Temperature *int
 }
 
-type DeviceService interface {
+type Service interface {
 	GetGroups() map[string]string
 	GetLights() map[string]string
 	GetLightsForGroup(group string) map[string]string
@@ -29,18 +29,18 @@ type DeviceService interface {
 	SetLightState(state LightState, lights ...string)
 }
 
-type deviceService[T any] struct {
+type service[T any] struct {
 	client *http.Client[T]
 }
 
-func CreateDeconzDeviceService[T any](client *http.Client[T]) DeviceService {
+func CreateService[T any](client *http.Client[T]) Service {
 	log.Notice("Deconz device service initialized.")
-	return deviceService[T]{
+	return service[T]{
 		client: client,
 	}
 }
 
-func (d deviceService[T]) GetGroups() map[string]string {
+func (d service[T]) GetGroups() map[string]string {
 	groups := make(map[string]http.GroupResponse)
 	_, err := d.client.GetAllGroups(&groups)
 	if err != nil {
@@ -53,7 +53,7 @@ func (d deviceService[T]) GetGroups() map[string]string {
 	return groupNames
 }
 
-func (d deviceService[T]) GetGroup(group string) http.GroupResponseAttribute {
+func (d service[T]) GetGroup(group string) http.GroupResponseAttribute {
 	var groupResponse http.GroupResponseAttribute
 	_, err := d.client.GetGroupAttributes(group, &groupResponse)
 	if err != nil {
@@ -63,7 +63,7 @@ func (d deviceService[T]) GetGroup(group string) http.GroupResponseAttribute {
 
 }
 
-func (d deviceService[T]) GetLights() map[string]string {
+func (d service[T]) GetLights() map[string]string {
 	lights := make(map[string]http.LightResponseState)
 	_, err := d.client.GetAllLights(&lights)
 	if err != nil {
@@ -76,16 +76,16 @@ func (d deviceService[T]) GetLights() map[string]string {
 	return lightNames
 }
 
-func (d deviceService[T]) GetLight(light string) http.LightResponseState {
+func (d service[T]) GetLight(light string) http.LightResponseState {
 	var state http.LightResponseState
-	_, err := d.client.Get("/lights/%s", &state, light)
+	_, err := d.client.GetLightState(light, &state)
 	if err != nil {
 		log.Fatalf("Can't resolve light: %v", err)
 	}
 	return state
 }
 
-func (d deviceService[T]) SetLightState(state LightState, lights ...string) {
+func (d service[T]) SetLightState(state LightState, lights ...string) {
 	lightState := http.LightRequestState{
 		Ct: state.Temperature,
 		On: state.On,
@@ -131,7 +131,7 @@ func (d deviceService[T]) SetLightState(state LightState, lights ...string) {
 	}
 }
 
-func (d deviceService[T]) GetLightsForGroup(group string) map[string]string {
+func (d service[T]) GetLightsForGroup(group string) map[string]string {
 	var groupResponse http.GroupResponseAttribute
 	_, err := d.client.GetGroupAttributes(group, &groupResponse)
 	if err != nil {
