@@ -23,5 +23,6 @@
         {{- if .TemperatureAvailable }}
         <button use="temperature" data="group:{{ .GroupId }}"/>
         {{- end }}
+        <button label="Override" onClick="Action.Override" data="{{ .GroupName }}" />
     </row>
 </view>
