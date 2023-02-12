@@ -23,6 +23,10 @@ func (t *ActionManager) ReceiveMessage(storage storage.Storage, message Message)
 	if message.GetData() == "" {
 		return
 	}
+	if !storage.Has("viewManager") {
+		return
+	}
+
 	views := storage.Get("viewManager").(*ViewManager)
 
 	button := views.FindButton(data)

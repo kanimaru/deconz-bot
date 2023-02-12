@@ -1,4 +1,4 @@
-{{- /*gotype: telegram-deconz/view.LightData*/ -}}
+{{- /*gotype: deconz-bot/view.LightData*/ -}}
 <?xml version="1.0" encoding="utf-8" ?>
 <view xmlns="https://kani.dev/telegram-deconz-view">
     {{ .GroupName}} - {{.Name }} Light:

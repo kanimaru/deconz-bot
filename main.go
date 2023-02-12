@@ -1,19 +1,24 @@
 package main
 
 import (
-	"github.com/PerformLine/go-stockutil/log"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/kanimaru/godeconz"
+	"encoding/json"
 	"math/rand"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"telegram-deconz/bot"
 	"telegram-deconz/deconz"
+	"telegram-deconz/mqtt"
 	"telegram-deconz/storage"
 	"telegram-deconz/telegram"
 	"telegram-deconz/template"
+
+	"github.com/PerformLine/go-stockutil/log"
+	mqtt2 "github.com/eclipse/paho.mqtt.golang"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/kanimaru/godeconz"
 )
 
 func getEnv(key string, fallback string) string {
@@ -43,14 +48,10 @@ func main() {
 	go handleSignals()
 
 	var (
-		engine  = template.CreateEngineByDir("view/")
-		setting = godeconz.Settings{
-			Address:      getEnv("DECONZ_ADDRESS", ""),
-			HttpProtocol: getEnv("DECONZ_PROTO", "http"),
-			ApiKey:       getEnv("DECONZ_API_KEY", ""),
-		}
-		deconzClient  = deconz.CreateClient(setting)
+		engine        = template.CreateEngineByDir("view/")
+		deconzClient  = deconz.CreateClient(getDeconzOptions())
 		deconzService = deconz.CreateService(deconzClient)
+		mqttClient    = mqtt.CreateMqttClient(getMqttOptions())
 
 		apiKey         = getEnv("TELEGRAM_API_KEY", "")
 		tgBot          = telegram.CreateBot(apiKey)
@@ -64,6 +65,7 @@ func main() {
 		lightsAction   = deconz.CreateLightsAction[telegram.Message](deconzService)
 		lightAction    = deconz.CreateLightAction[telegram.Message](deconzService)
 		scanAction     = deconz.CreateScanAction[telegram.Message](deconzService)
+		overrideAction = mqtt.CreateOverrideAction[telegram.Message](mqttClient)
 	)
 
 	distributor.AddMessageReceiver(actionManager)
@@ -74,14 +76,39 @@ func main() {
 	actionManager.RegisterAction(lightsAction, "Select.Light")
 	actionManager.RegisterAction(lightAction, lightAction.HandledActions...)
 	actionManager.RegisterAction(scanAction, "Action.StartScan", "Action.StopScan")
+	actionManager.RegisterAction(overrideAction, "Action.Override")
 	commandManager.AddCommand("light", commands.CreateLightCmd())
 	commandManager.AddCommand("scan", commands.CreateScanCmd())
 
 	chatId := getChatId()
 	tgBot.UpdateCommands(commandManager, tgbotapi.NewBotCommandScopeChat(chatId))
+	listenForChat(mqttClient, tgBot)
 
 	go tgBot.HandleUpdates(distributor.ReceiveMessage)
 	<-doneChan
+}
+
+func getDeconzOptions() godeconz.Settings {
+	return godeconz.Settings{
+		Address:      getEnv("DECONZ_ADDRESS", ""),
+		HttpProtocol: getEnv("DECONZ_PROTO", "http"),
+		ApiKey:       getEnv("DECONZ_API_KEY", ""),
+	}
+}
+
+func getMqttOptions() *mqtt2.ClientOptions {
+	options := mqtt2.NewClientOptions().
+		SetUsername(getEnv("MQTT_USERNAME", "")).
+		SetPassword(getEnv("MQTT_PASSWORD", "")).
+		SetClientID(getEnv("MQTT_CLIENT_ID", "deconzBot")).
+		SetAutoReconnect(true).
+		SetStore(mqtt2.NewMemoryStore())
+	urls := getEnv("MQTT_URL", "")
+	urlSlice := strings.Split(urls, "|")
+	for _, broker := range urlSlice {
+		options.AddBroker(broker)
+	}
+	return options
 }
 
 func getChatId() int64 {
@@ -91,4 +118,32 @@ func getChatId() int64 {
 		log.Fatalf("Can't get telegram scope.")
 	}
 	return chatId
+}
+
+func listenForChat(client mqtt2.Client, bot telegram.Bot) {
+	token := client.Subscribe("global/chat", 2, func(client mqtt2.Client, message mqtt2.Message) {
+		var baseMessage mqtt.BaseMessage
+		err := json.Unmarshal(message.Payload(), &baseMessage)
+		if err != nil {
+			log.Errorf("Can't unmarshal message lost telegram message: %w", err)
+			return
+		}
+
+		chatId, err := strconv.ParseInt(baseMessage.To, 10, 64)
+		if err != nil {
+			log.Errorf("Can't parse chatId from %v: %w", baseMessage.From, err)
+			return
+		}
+
+		msg := tgbotapi.NewMessage(chatId, baseMessage.Payload.(string))
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Errorf("Can't send message received from MQTT: %w", err)
+			return
+		}
+	})
+	<-token.Done()
+	if token.Error() != nil {
+		log.Errorf("Couldn't subscribe to chat messages: %v", token.Error())
+	}
 }

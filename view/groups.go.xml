@@ -1,4 +1,4 @@
-{{- /*gotype: telegram-deconz/view.GroupsData*/ -}}
+{{- /*gotype: deconz-bot/view.GroupsData*/ -}}
 <?xml version="1.0" encoding="utf-8" ?>
 <view name="groups" xmlns="https://kani.dev/telegram-deconz-view">
     Groups:
