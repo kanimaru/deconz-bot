@@ -11,6 +11,7 @@ RUN CGO_ENABLED=0 GOARCH=arm64 GOARM=5 GOOS=linux go build -a -installsuffix cgo
 
 FROM scratch
 COPY --from=builder /build/main /app/
+COPY --from=builder /build/view /app/view
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 WORKDIR /app
 EXPOSE 9800
