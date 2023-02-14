@@ -7,11 +7,11 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
-	github.com/kanimaru/godeconz v0.0.6
+	github.com/kanimaru/godeconz v0.0.7
 	github.com/lucasb-eyer/go-colorful v1.2.0
 )
 
-//replace github.com/kanimaru/godeconz v0.0.5 => ../godeconz
+//replace github.com/kanimaru/godeconz v0.0.7 => ../godeconz
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
