@@ -25,7 +25,7 @@ func CreateViewManager(bot Bot, engine template.Engine) bot.ViewManager[Message]
 		bot:               bot,
 		engine:            engine,
 		previousViewStack: list.New(),
-		DebugView:         true,
+		DebugView:         false,
 	}
 }
 
@@ -124,12 +124,13 @@ func GetInlineKeyboard(view *template.View) tgbotapi.InlineKeyboardMarkup {
 func writeViewToFile(view *template.View, path string) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0755)
 	if err != nil {
-		log.Fatalf("Can't open file for writing view: %w", err)
+		log.Errorf("Can't open file for writing view: %w", err)
+		return
 	}
 	encoder := xml.NewEncoder(file)
 	encoder.Indent("", "\t")
 	err = encoder.Encode(view)
 	if err != nil {
-		log.Fatalf("Can't encode view to xml: %w", err)
+		log.Errorf("Can't encode view to xml: %w", err)
 	}
 }
