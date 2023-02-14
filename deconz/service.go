@@ -52,6 +52,7 @@ func (d service[T]) GetGroups() map[string]string {
 	for id, group := range groups {
 		groupNames[id] = group.Name
 	}
+	log.Notice("Deconz Groups loaded: %v", len(groupNames))
 	return groupNames
 }
 
