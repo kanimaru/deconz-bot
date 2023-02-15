@@ -5,7 +5,7 @@ import (
 	"telegram-deconz/storage"
 )
 
-func (c Command) CreateScanCmd() bot.CommandDefinition[Message] {
+func (c CommandFactory) CreateScanCmd() bot.CommandDefinition[Message] {
 	return bot.CommandDefinition[Message]{
 		Description: "New device scanning",
 		Exec: func(storage storage.Storage, message Message) {

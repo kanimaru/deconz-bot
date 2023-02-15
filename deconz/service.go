@@ -3,6 +3,7 @@ package deconz
 import (
 	"github.com/PerformLine/go-stockutil/log"
 	"github.com/kanimaru/godeconz/http"
+	"github.com/kanimaru/godeconz/ws"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
@@ -27,24 +28,28 @@ type Service interface {
 	GetLight(light string) http.LightResponseState
 	GetGroup(group string) http.GroupResponseAttribute
 	SetLightState(state LightState, lights ...string)
+	GetAddedDevices() chan ws.Message
+	GetRemovedDevices() chan ws.Message
 	StartScan(duration uint8)
 	StopScan()
 }
 
 type service[T any] struct {
-	client *http.Client[T]
+	httpClient *http.Client[T]
+	wsClient   *ws.Client
 }
 
-func CreateService[T any](client *http.Client[T]) Service {
+func CreateService[T any](httpClient *http.Client[T], wsClient *ws.Client) Service {
 	log.Notice("Deconz device service initialized.")
 	return service[T]{
-		client: client,
+		httpClient: httpClient,
+		wsClient:   wsClient,
 	}
 }
 
 func (d service[T]) GetGroups() map[string]string {
 	groups := make(map[string]http.GroupResponse)
-	_, err := d.client.GetAllGroups(&groups)
+	_, err := d.httpClient.GetAllGroups(&groups)
 	if err != nil {
 		log.Fatalf("Can't resolve groups: %v", err)
 	}
@@ -58,7 +63,7 @@ func (d service[T]) GetGroups() map[string]string {
 
 func (d service[T]) GetGroup(group string) http.GroupResponseAttribute {
 	var groupResponse http.GroupResponseAttribute
-	_, err := d.client.GetGroupAttributes(group, &groupResponse)
+	_, err := d.httpClient.GetGroupAttributes(group, &groupResponse)
 	if err != nil {
 		log.Fatalf("Can't resolve group: %v", err)
 	}
@@ -68,7 +73,7 @@ func (d service[T]) GetGroup(group string) http.GroupResponseAttribute {
 
 func (d service[T]) GetLights() map[string]string {
 	lights := make(map[string]http.LightResponseState)
-	_, err := d.client.GetAllLights(&lights)
+	_, err := d.httpClient.GetAllLights(&lights)
 	if err != nil {
 		log.Fatalf("Can't resolve lights: %v", err)
 	}
@@ -81,7 +86,7 @@ func (d service[T]) GetLights() map[string]string {
 
 func (d service[T]) GetLight(light string) http.LightResponseState {
 	var state http.LightResponseState
-	_, err := d.client.GetLightState(light, &state)
+	_, err := d.httpClient.GetLightState(light, &state)
 	if err != nil {
 		log.Fatalf("Can't resolve light: %v", err)
 	}
@@ -127,7 +132,7 @@ func (d service[T]) SetLightState(state LightState, lights ...string) {
 	}
 
 	for _, light := range lights {
-		_, err := d.client.SetLightState(light, lightState)
+		_, err := d.httpClient.SetLightState(light, lightState)
 		if err != nil {
 			log.Fatalf("Can't update light %v: %v", light, err)
 		}
@@ -136,7 +141,7 @@ func (d service[T]) SetLightState(state LightState, lights ...string) {
 
 func (d service[T]) GetLightsForGroup(group string) map[string]string {
 	var groupResponse http.GroupResponseAttribute
-	_, err := d.client.GetGroupAttributes(group, &groupResponse)
+	_, err := d.httpClient.GetGroupAttributes(group, &groupResponse)
 	if err != nil {
 		log.Fatalf("Can't resolve group %v: %v", group, err)
 	}
@@ -144,7 +149,7 @@ func (d service[T]) GetLightsForGroup(group string) map[string]string {
 	for _, lightId := range groupResponse.Lights {
 
 		var lightState http.LightResponseState
-		_, err = d.client.GetLightState(lightId, &lightState)
+		_, err = d.httpClient.GetLightState(lightId, &lightState)
 		if err != nil {
 			log.Fatalf("Can't resolve lights: %v", err)
 		}
@@ -154,7 +159,7 @@ func (d service[T]) GetLightsForGroup(group string) map[string]string {
 }
 
 func (d service[T]) StartScan(duration uint8) {
-	_, err := d.client.ModifyConfiguration(http.ConfigRequest{
+	_, err := d.httpClient.ModifyConfiguration(http.ConfigRequest{
 		PermitJoin: &duration,
 	})
 	if err != nil {
@@ -164,10 +169,26 @@ func (d service[T]) StartScan(duration uint8) {
 
 func (d service[T]) StopScan() {
 	duration := uint8(0)
-	_, err := d.client.ModifyConfiguration(http.ConfigRequest{
+	_, err := d.httpClient.ModifyConfiguration(http.ConfigRequest{
 		PermitJoin: &duration,
 	})
 	if err != nil {
 		log.Warningf("Can't disable scan: %w", err)
 	}
+}
+
+func (d service[T]) GetAddedDevices() chan ws.Message {
+	messages := make(chan ws.Message)
+	ws.NewChanCallback(messages, d.wsClient, ws.Filter{
+		EventTypes: []ws.EventType{ws.EventTypeAdded},
+	})
+	return messages
+}
+
+func (d service[T]) GetRemovedDevices() chan ws.Message {
+	messages := make(chan ws.Message)
+	ws.NewChanCallback(messages, d.wsClient, ws.Filter{
+		EventTypes: []ws.EventType{ws.EventTypeDeleted},
+	})
+	return messages
 }

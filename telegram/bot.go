@@ -46,6 +46,14 @@ func (b Bot) UpdateCommands(commandManager *bot.CommandManager[Message], scope t
 	}
 }
 
+func (b Bot) SendMessage(message string, chatId int64) {
+	msg := tgbotapi.NewMessage(chatId, message)
+	_, err := b.Send(msg)
+	if err != nil {
+		log.Errorf("Can't send message %v", message, err)
+	}
+}
+
 type Message struct {
 	id      int
 	text    string

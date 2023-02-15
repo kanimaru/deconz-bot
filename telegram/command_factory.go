@@ -8,15 +8,15 @@ import (
 	"telegram-deconz/template"
 )
 
-type Command struct {
+type CommandFactory struct {
 	bot            Bot
 	deconzService  deconz.Service
 	storageManager storage.Manager
 	engine         template.Engine
 }
 
-func CreateCommand(bot Bot, deconzService deconz.Service, storageManager storage.Manager, engine template.Engine) *Command {
-	return &Command{
+func CreateCommandFactory(bot Bot, deconzService deconz.Service, storageManager storage.Manager, engine template.Engine) *CommandFactory {
+	return &CommandFactory{
 		bot:            bot,
 		deconzService:  deconzService,
 		storageManager: storageManager,
@@ -24,18 +24,18 @@ func CreateCommand(bot Bot, deconzService deconz.Service, storageManager storage
 	}
 }
 
-func (c Command) GetStorage(message *Message) storage.Storage {
+func (c CommandFactory) GetStorage(message *Message) storage.Storage {
 	return c.storageManager.Get(message.GetId())
 }
 
-func (c Command) removeCommandMessage(message Message) {
+func (c CommandFactory) removeCommandMessage(message Message) {
 	_, err := c.bot.Request(tgbotapi.NewDeleteMessage(message.GetChatId(), message.GetId()))
 	if err != nil {
 		log.Warningf("Can't delete the request")
 	}
 }
 
-func (c Command) openInlineMessage(template string, data interface{}, message Message) {
+func (c CommandFactory) openInlineMessage(template string, data interface{}, message Message) {
 	viewManager := CreateViewManager(c.bot, c.engine)
 	_, newMessage := viewManager.Show(template, data, message)
 	// Don't use storage from parameter it's for the command message.
