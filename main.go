@@ -86,10 +86,9 @@ func main() {
 
 	go deconzWsClient.Connect()
 	go deconz.ListenForAddedDevices(deconzService, basicMessageSender)
-
-	go listenForChat(mqttClient, tgBot)
-
+	listenForChat(mqttClient, tgBot)
 	go tgBot.HandleUpdates(distributor.ReceiveMessage)
+	log.Infof("Init is ready! Start working...")
 	<-doneChan
 }
 
@@ -150,8 +149,8 @@ func listenForChat(client mqtt2.Client, bot telegram.Bot) {
 			return
 		}
 	})
-	<-token.Done()
-	if token.Error() != nil {
+	if token.Wait() && token.Error() != nil {
 		log.Errorf("Couldn't subscribe to chat messages: %v", token.Error())
 	}
+	log.Infof("Listen for 'global/chat'")
 }

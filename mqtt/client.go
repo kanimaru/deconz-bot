@@ -3,17 +3,15 @@ package mqtt
 import (
 	"github.com/PerformLine/go-stockutil/log"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"time"
 )
 
 func CreateMqttClient(options *mqtt.ClientOptions) mqtt.Client {
+	log.Infof("MQTT connecting...")
 	mqttClient := mqtt.NewClient(options)
 	token := mqttClient.Connect()
-	token.WaitTimeout(5 * time.Second)
-	err := token.Error()
-	if err != nil {
-		log.Fatalf("Can't connect MQTT: %w", err)
+	if token.Wait() && token.Error() != nil {
+		log.Fatalf("Can't connect MQTT: %w", token.Error())
 	}
-	log.Infof("MQTT Connected")
+	log.Infof("MQTT connected!")
 	return mqttClient
 }
