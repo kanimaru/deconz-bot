@@ -14,6 +14,7 @@ import (
 	"telegram-deconz/storage"
 	"telegram-deconz/telegram"
 	"telegram-deconz/template"
+	"time"
 
 	"github.com/PerformLine/go-stockutil/log"
 	mqtt2 "github.com/eclipse/paho.mqtt.golang"
@@ -106,7 +107,10 @@ func getMqttOptions() *mqtt2.ClientOptions {
 		SetPassword(getEnv("MQTT_PASSWORD", "")).
 		SetClientID(getEnv("MQTT_CLIENT_ID", "deconzBot")).
 		SetAutoReconnect(true).
-		SetStore(mqtt2.NewMemoryStore())
+		SetStore(mqtt2.NewMemoryStore()).
+		SetPingTimeout(10 * time.Second).
+		SetKeepAlive(10 * time.Second).
+		SetResumeSubs(true)
 	urls := getEnv("MQTT_URL", "")
 	urlSlice := strings.Split(urls, "|")
 	for _, broker := range urlSlice {
