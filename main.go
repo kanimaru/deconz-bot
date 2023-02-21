@@ -135,14 +135,14 @@ func listenForChat(client mqtt2.Client, bot telegram.Bot) {
 
 		chatId, err := strconv.ParseInt(baseMessage.To, 10, 64)
 		if err != nil {
-			log.Errorf("Can't parse chatId from %v: %w", baseMessage.From, err)
+			log.Errorf("Can't parse chatId from %v -> %v: %v", baseMessage.From, baseMessage.To, err)
 			return
 		}
 
 		msg := tgbotapi.NewMessage(chatId, baseMessage.Payload.(string))
 		_, err = bot.Send(msg)
 		if err != nil {
-			log.Errorf("Can't send message received from MQTT: %w", err)
+			log.Errorf("Can't send message received from MQTT: %v", err)
 			return
 		}
 	})

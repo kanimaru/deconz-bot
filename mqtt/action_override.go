@@ -40,7 +40,7 @@ func (g *OverrideAction[Message]) Call(storage storage.Storage, message Message,
 		From:    strconv.FormatInt(message.GetChatId(), 10),
 		Payload: true,
 	}
-	publish := g.client.Publish(target.Data+"/override/write", 1, true, mqttMessage.ToJson())
+	publish := g.client.Publish(target.Data+"/override/write", 1, false, mqttMessage.ToJson())
 	go func() {
 		publish.WaitTimeout(5 * time.Second)
 		err := publish.Error()
