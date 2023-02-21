@@ -6,7 +6,7 @@ import (
 )
 
 func CreateMqttClient(options *mqtt.ClientOptions) mqtt.Client {
-	log.Infof("MQTT connecting...")
+	log.Infof("MQTT connecting to %v", options.Servers[0])
 	mqttClient := mqtt.NewClient(options)
 	token := mqttClient.Connect()
 	if token.Wait() && token.Error() != nil {

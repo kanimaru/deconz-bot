@@ -109,7 +109,8 @@ func getMqttOptions() *mqtt2.ClientOptions {
 		SetStore(mqtt2.NewMemoryStore()).
 		SetPingTimeout(10 * time.Second).
 		SetKeepAlive(10 * time.Second).
-		SetResumeSubs(true)
+		SetResumeSubs(true).
+		SetCleanSession(true)
 	urls := getEnv("MQTT_URL", "")
 	urlSlice := strings.Split(urls, "|")
 	for _, broker := range urlSlice {
