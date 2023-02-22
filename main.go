@@ -129,7 +129,7 @@ func getChatId() int64 {
 }
 
 func listenForChat(client mqtt2.Client, bot telegram.Bot) {
-	token := client.Subscribe("global/chat", 2, func(client mqtt2.Client, message mqtt2.Message) {
+	token := client.Subscribe("global/chat", 1, func(client mqtt2.Client, message mqtt2.Message) {
 		var baseMessage mqtt.BaseMessage
 		err := json.Unmarshal(message.Payload(), &baseMessage)
 		if err != nil {
