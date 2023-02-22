@@ -110,7 +110,14 @@ func getMqttOptions() *mqtt2.ClientOptions {
 		SetPingTimeout(10 * time.Second).
 		SetKeepAlive(10 * time.Second).
 		SetResumeSubs(true).
-		SetCleanSession(true)
+		SetCleanSession(true).
+		SetConnectionLostHandler(func(client mqtt2.Client, err error) {
+			log.Errorf("Connection to MQTT broker lost.")
+		}).
+		SetOnConnectHandler(func(client mqtt2.Client) {
+			log.Infof("Connection to MQTT broker established")
+		})
+
 	urls := getEnv("MQTT_URL", "")
 	urlSlice := strings.Split(urls, "|")
 	for _, broker := range urlSlice {
