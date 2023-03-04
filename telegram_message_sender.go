@@ -17,3 +17,7 @@ func CreateBaseMessageSender(chatId int64, bot telegram.Bot) *BaseMessageSender 
 func (b BaseMessageSender) SendMessage(message string) {
 	b.bot.SendMessage(message, b.chatId)
 }
+
+func (b BaseMessageSender) SendMessageChat(id int64, message string) {
+	b.bot.SendMessage(message, id)
+}

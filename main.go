@@ -86,7 +86,7 @@ func main() {
 
 	go deconzWsClient.Connect()
 	go deconz.ListenForAddedDevices(deconzService, basicMessageSender)
-	listenForChat(mqttClient, tgBot)
+	listenForChat(mqttClient, basicMessageSender)
 	go tgBot.HandleUpdates(distributor.ReceiveMessage)
 	log.Infof("Init is ready! Start working...")
 	<-doneChan
@@ -111,6 +111,7 @@ func getMqttOptions() *mqtt2.ClientOptions {
 		SetKeepAlive(10 * time.Second).
 		SetResumeSubs(true).
 		SetCleanSession(true).
+		SetOrderMatters(false).
 		SetConnectionLostHandler(func(client mqtt2.Client, err error) {
 			log.Errorf("Connection to MQTT broker lost.")
 		}).
@@ -135,7 +136,7 @@ func getChatId() int64 {
 	return chatId
 }
 
-func listenForChat(client mqtt2.Client, bot telegram.Bot) {
+func listenForChat(client mqtt2.Client, sender *BaseMessageSender) {
 	token := client.Subscribe("global/chat", 1, func(client mqtt2.Client, message mqtt2.Message) {
 		var baseMessage mqtt.BaseMessage
 		err := json.Unmarshal(message.Payload(), &baseMessage)
@@ -150,12 +151,7 @@ func listenForChat(client mqtt2.Client, bot telegram.Bot) {
 			return
 		}
 
-		msg := tgbotapi.NewMessage(chatId, baseMessage.Payload.(string))
-		_, err = bot.Send(msg)
-		if err != nil {
-			log.Errorf("Can't send message received from MQTT: %v", err)
-			return
-		}
+		go sender.SendMessageChat(chatId, baseMessage.Payload.(string))
 	})
 	if token.Wait() && token.Error() != nil {
 		log.Errorf("Couldn't subscribe to chat messages: %v", token.Error())
