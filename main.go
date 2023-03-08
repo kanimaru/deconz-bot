@@ -53,7 +53,6 @@ func main() {
 		deconzHttpClient   = deconz.CreateHttpClient(getDeconzOptions())
 		deconzWsClient     = deconz.CreateWsClient(deconzHttpClient)
 		deconzService      = deconz.CreateService(deconzHttpClient, deconzWsClient)
-		mqttClient         = mqtt.CreateMqttClient(getMqttOptions())
 		chatId             = getChatId()
 		apiKey             = getEnv("TELEGRAM_API_KEY", "")
 		tgBot              = telegram.CreateBot(apiKey)
@@ -61,14 +60,24 @@ func main() {
 		storageManager     = storage.CreateInMemoryStorage()
 		commandFactory     = telegram.CreateCommandFactory(tgBot, deconzService, storageManager, engine)
 		actionManager      = telegram.CreateActionManager(storageManager)
-		commandManager     = bot.CreateCommandManager[telegram.Message]()
-		distributor        = bot.CreateMessageDistributor[telegram.Message](storageManager)
-		viewAction         = bot.CreateViewAction[telegram.Message]()
-		groupsAction       = deconz.CreateGroupsAction[telegram.Message](deconzService)
-		lightsAction       = deconz.CreateLightsAction[telegram.Message](deconzService)
-		lightAction        = deconz.CreateLightAction[telegram.Message](deconzService)
-		scanAction         = deconz.CreateScanAction[telegram.Message](deconzService)
-		overrideAction     = mqtt.CreateOverrideAction[telegram.Message](mqttClient)
+	)
+
+	options := getMqttOptions().
+		SetOnConnectHandler(func(client mqtt2.Client) {
+			log.Infof("Connection to MQTT broker established")
+			listenForChat(client, basicMessageSender)
+		})
+	mqttClient := mqtt.CreateMqttClient(options)
+
+	var (
+		commandManager = bot.CreateCommandManager[telegram.Message]()
+		distributor    = bot.CreateMessageDistributor[telegram.Message](storageManager)
+		viewAction     = bot.CreateViewAction[telegram.Message]()
+		groupsAction   = deconz.CreateGroupsAction[telegram.Message](deconzService)
+		lightsAction   = deconz.CreateLightsAction[telegram.Message](deconzService)
+		lightAction    = deconz.CreateLightAction[telegram.Message](deconzService)
+		scanAction     = deconz.CreateScanAction[telegram.Message](deconzService)
+		overrideAction = mqtt.CreateOverrideAction[telegram.Message](mqttClient)
 	)
 
 	distributor.AddMessageReceiver(actionManager)
@@ -86,7 +95,6 @@ func main() {
 
 	go deconzWsClient.Connect()
 	go deconz.ListenForAddedDevices(deconzService, basicMessageSender)
-	listenForChat(mqttClient, basicMessageSender)
 	go tgBot.HandleUpdates(distributor.ReceiveMessage)
 	log.Infof("Init is ready! Start working...")
 	<-doneChan
@@ -109,14 +117,12 @@ func getMqttOptions() *mqtt2.ClientOptions {
 		SetStore(mqtt2.NewMemoryStore()).
 		SetPingTimeout(10 * time.Second).
 		SetKeepAlive(10 * time.Second).
+		SetConnectRetryInterval(5 * time.Second).
 		SetResumeSubs(true).
 		SetCleanSession(true).
 		SetOrderMatters(false).
 		SetConnectionLostHandler(func(client mqtt2.Client, err error) {
 			log.Errorf("Connection to MQTT broker lost.")
-		}).
-		SetOnConnectHandler(func(client mqtt2.Client) {
-			log.Infof("Connection to MQTT broker established")
 		})
 
 	urls := getEnv("MQTT_URL", "")
