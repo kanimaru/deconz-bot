@@ -7,17 +7,17 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
-	github.com/kanimaru/godeconz v0.0.7
+	github.com/gorilla/websocket v1.5.0
+	github.com/kanimaru/godeconz v0.0.14
 	github.com/lucasb-eyer/go-colorful v1.2.0
 )
 
-//replace github.com/kanimaru/godeconz v0.0.7 => ../godeconz
+replace github.com/kanimaru/godeconz v0.0.14 => ../godeconz
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6 // indirect

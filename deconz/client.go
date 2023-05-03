@@ -33,11 +33,15 @@ type LightFeatures struct {
 func GetLightFeatures(lights ...http.LightResponseState) LightFeatures {
 	features := LightFeatures{}
 	for _, light := range lights {
-		features.Reachable = features.Reachable || (light.State.Reachable != nil && *light.State.Reachable)
+		var details http.LightResponseStateDetail
+		if err := light.StateAs(details); err != nil {
+			log.Errorf("Can't parse %v details cause of %v", light.Name, err)
+		}
+		features.Reachable = features.Reachable || (details.Reachable != nil && *details.Reachable)
 		features.HasTemp = features.HasTemp || (light.Ctmin != nil && light.Ctmax != nil && (*light.Ctmin != *light.Ctmax))
-		features.HasColor = features.HasColor || (light.State.Colormode != nil && (*light.State.Colormode == http.ColorModeHS || *light.State.Colormode == http.ColorModeXY))
-		features.On = features.On || (light.State.On != nil && *light.State.On)
-		features.HasBrightness = features.HasBrightness || light.State.Bri != nil
+		features.HasColor = features.HasColor || (details.Colormode != nil && (*details.Colormode == http.ColorModeHS || *details.Colormode == http.ColorModeXY))
+		features.On = features.On || (details.On != nil && *details.On)
+		features.HasBrightness = features.HasBrightness || details.Bri != nil
 	}
 	return features
 }
